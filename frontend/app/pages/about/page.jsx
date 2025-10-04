@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import JoinHandsSection from "./JoinHandsSection"; // your existing component
 
 const AboutPage = () => {
   return (
