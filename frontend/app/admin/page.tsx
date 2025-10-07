@@ -160,8 +160,11 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-xs text-gray-600">
-                    File: {homeImage?.name} (
-                    {(homeImage?.size / 1024 / 1024).toFixed(2)} MB)
+                    File: {homeImage?.name || "Unknown"} (
+                    {homeImage
+                      ? (homeImage.size / 1024 / 1024).toFixed(2)
+                      : "0"}{" "}
+                    MB)
                   </p>
                   <button
                     type="button"
@@ -222,7 +225,7 @@ export default function AdminPage() {
             </div>
 
             {/* Preview and Clear */}
-            {missionPreview && (
+            {missionPreview && missionImage && (
               <div className="mt-4 p-3 border border-blue-200 rounded bg-blue-50">
                 <p className="text-sm font-medium text-blue-700 mb-2">
                   New Image Preview:
@@ -237,8 +240,9 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-xs text-gray-600">
-                    File: {missionImage?.name} (
-                    {(missionImage?.size / 1024 / 1024).toFixed(2)} MB)
+                    {/* ✅ FIX: missionImage is guaranteed to exist here because of the && check above */}
+                    File: {missionImage.name} (
+                    {(missionImage.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                   <button
                     type="button"
