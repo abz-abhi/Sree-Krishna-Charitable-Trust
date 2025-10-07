@@ -8,7 +8,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchHomeImage = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/images/");
+        const res = await fetch("/api/images");
         const data = await res.json();
 
         const homeImg = data.filter((item) => item.section === "main");
@@ -60,8 +60,8 @@ const HomePage = () => {
         <div className="relative w-full h-[280px] sm:h-[360px] md:h-[420px] lg:h-[500px] rounded-lg overflow-hidden shadow-lg">
           {homeImage ? (
             <Image
-              src={`http://localhost:5000${homeImage.imageUrl}`}
-              alt={homeImage.title || "Home Page Image"}
+              src={homeImage.filepath || homeImage.imageUrl}
+              alt={homeImage.originalName || "Home Page Image"}
               fill
               className="object-cover grayscale-[30%] hover:grayscale-0 transition duration-500"
             />
