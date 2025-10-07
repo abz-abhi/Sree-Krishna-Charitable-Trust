@@ -7,7 +7,7 @@ const MissionSection = () => {
 
   const fetchMissionImage = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/images");
+      const res = await fetch("/api/images");
       const data = await res.json();
 
       const missionImg = data.filter((item) => item.section === "mission");
@@ -34,7 +34,7 @@ const MissionSection = () => {
         <div className="relative w-full h-[280px] sm:h-[360px] md:h-[420px] lg:h-[700px] rounded-2xl overflow-hidden shadow-xl order-1 lg:order-none">
           {missionImage ? (
             <Image
-              src={`http://localhost:5000${missionImage.imageUrl}`}
+              src={missionImage.filepath || missionImage.imageUrl}
               alt="Mission"
               fill
               className="object-cover grayscale-[30%] hover:grayscale-0 transition duration-700 ease-in-out"
