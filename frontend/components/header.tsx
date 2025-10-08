@@ -2,15 +2,17 @@
 import React, { useState } from "react";
 import { FaPhone } from "react-icons/fa";
 import { Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
-  { name: "About", href: "/about" },
-  { name: "Santhi Bhavan", href: "#" },
-  { name: "Contact", href: "#" },
+  { name: "About", href: "/pages/about" },
+  { name: "Santhi Bhavan", href: "/pages/shanthi" },
+  { name: "Contact", href: "/pages/contact" },
 ];
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-lime-50/80 shadow-lg">
@@ -18,7 +20,7 @@ const Header = () => {
         <div className="flex justify-between items-center h-24">
           {/* Logo Section */}
           <div
-            onClick={() => window.location.reload()}
+            onClick={() => router.push("/")}
             className="flex items-center space-x-3 cursor-pointer"
           >
             <div className="w-16 h-16 bg-emerald-700 rounded-full flex items-center justify-center shadow-md">
