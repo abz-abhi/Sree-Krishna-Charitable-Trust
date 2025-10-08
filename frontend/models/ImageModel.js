@@ -40,11 +40,9 @@ const imageSchema = new mongoose.Schema({
   },
 });
 
-// Update timestamp
 imageSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
-// Use your database name
 export default mongoose.models.Image || mongoose.model("Image", imageSchema);
