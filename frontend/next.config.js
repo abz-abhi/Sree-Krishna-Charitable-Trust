@@ -1,28 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // For external packages in Server Components
+  // Remove serverExternalPackages or keep it
   serverExternalPackages: ["mongoose"],
 
-  // Image configurations
+  // Image configurations - update for production
   images: {
     remotePatterns: [
       {
-        protocol: "http",
-        hostname: "localhost",
-        port: "5000",
-        pathname: "/uploads/**",
-      },
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "3000",
-        pathname: "/uploads/**",
+        protocol: "https",
+        hostname: "**", // Allow all domains for base64 images
       },
     ],
     domains: ["localhost"],
+    unoptimized: true, // Important for Vercel
   },
 
-  // ✅ CORRECT way to increase body size limit in Next.js 15
+  // Increase body size limit
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",

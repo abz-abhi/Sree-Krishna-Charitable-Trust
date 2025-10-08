@@ -26,6 +26,10 @@ const imageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // ADD THIS FIELD - Store image as base64
+  imageData: {
+    type: String, // base64 encoded image
+  },
   uploadedAt: {
     type: Date,
     default: Date.now,

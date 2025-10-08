@@ -2,8 +2,10 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!MONGODB_URI) {
-  throw new Error("❌ Please define MONGODB_URI in your .env.local file");
+// DON'T throw error during build - this causes deployment failure
+if (!MONGODB_URI && typeof window === "undefined") {
+  console.log("⚠️ MONGODB_URI not defined - build time");
+  // Don't throw error, just log
 }
 
 let cached = global.mongoose;
@@ -13,6 +15,12 @@ if (!cached) {
 }
 
 async function connectDB() {
+  // If no MongoDB URI (during build), return null instead of throwing
+  if (!MONGODB_URI) {
+    console.log("📦 DB: MongoDB URI not configured - build time");
+    return null;
+  }
+
   if (cached.conn) {
     console.log("📦 DB: Using cached connection");
     return cached.conn;
@@ -32,7 +40,8 @@ async function connectDB() {
       })
       .catch((error) => {
         console.error("❌ DB: Connection Failed:", error);
-        throw error;
+        cached.promise = null; // Reset on error
+        return null; // Don't throw, return null
       });
   }
 
@@ -41,7 +50,7 @@ async function connectDB() {
   } catch (error) {
     cached.promise = null;
     console.error("❌ DB: Connection Error:", error);
-    throw error;
+    return null;
   }
 
   return cached.conn;

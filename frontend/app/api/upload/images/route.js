@@ -1,73 +1,59 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import ImageModel from "@/models/ImageModel";
-import fs from "fs";
-import path from "path";
-
-// ✅ COMPLETELY disable body parsing for this route
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
-// Parse multipart form data manually
-async function parseFormData(request) {
-  const formData = await request.formData();
-  return formData;
-}
-
-// ✅ ADD GET METHOD to test the route
-export async function GET() {
-
-  return NextResponse.json({
-    success: true,
-    message: "Upload endpoint is working!",
-    endpoint: "/api/upload/images",
-    method: "POST",
-    required_fields: [
-      "image (file)",
-      "section (optional: main, mission, gallery)",
-    ],
-    max_file_size: "8MB",
-    supported_formats: "All image types",
-    timestamp: new Date().toISOString(),
-  });
-}
 
 export async function POST(request) {
-
   try {
-    // Step 1: Connect to Database
-    await connectDB();
+    console.log("🔄 UPLOAD: Starting image upload process...");
 
-    // Step 2: Parse Form Data manually
-    const formData = await parseFormData(request);
+    // Connect to database safely
+    const db = await connectDB();
+
+    if (!db) {
+      console.log("❌ UPLOAD: No database connection");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Database not available",
+        },
+        { status: 503 }
+      );
+    }
+
+    // Parse form data
+    const formData = await request.formData();
     const file = formData.get("image");
     const section = formData.get("section") || "gallery";
 
     if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-    }
-
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
       return NextResponse.json(
-        { error: "File must be an image" },
+        {
+          success: false,
+          error: "No file uploaded",
+        },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 8MB to be safe)
-    const maxSize = 8 * 1024 * 1024;
-    if (file.size > maxSize) {
-      console.log(
-        "❌ UPLOAD: File too large:",
-        (file.size / 1024 / 1024).toFixed(2),
-        "MB"
-      );
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
       return NextResponse.json(
         {
+          success: false,
+          error: "File must be an image",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (max 4MB for base64)
+    const maxSize = 4 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        {
+          success: false,
           error: "File too large",
-          details: `Maximum size is 8MB. Your file is ${(
+          details: `Maximum size is 4MB. Your file is ${(
             file.size /
             1024 /
             1024
@@ -77,46 +63,35 @@ export async function POST(request) {
       );
     }
 
-    // Convert file to buffer
-    console.log("🔄 UPLOAD: Converting file to buffer...");
+    // Convert file to base64 (INSTEAD of saving to filesystem)
+    console.log("🔄 UPLOAD: Converting file to base64...");
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // Create uploads directory
-    const uploadsDir = path.join(process.cwd(), "public/uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-      console.log("✅ UPLOAD: Created uploads directory");
-    }
+    const base64Image = buffer.toString("base64");
 
     // Generate unique filename
     const timestamp = Date.now();
     const originalName = file.name;
-    const extension = path.extname(originalName);
-    const filename = `image_${timestamp}${extension}`;
-    const filepath = `/uploads/${filename}`;
-    const fullFilepath = path.join(uploadsDir, filename);
+    const extension = originalName.split(".").pop();
+    const filename = `image_${timestamp}.${extension}`;
 
-    console.log("💾 UPLOAD: Saving file as:", filename);
+    console.log("💾 UPLOAD: Saving to database...");
 
-    // Save file to filesystem
-    fs.writeFileSync(fullFilepath, buffer);
-    console.log("✅ UPLOAD: File saved to filesystem");
-
-    // Save to database
+    // Save to database WITH base64 image data
     const imageDoc = new ImageModel({
       filename: filename,
       originalName: originalName,
-      filepath: filepath,
+      filepath: `/api/images/${filename}`, // Virtual path
       section: section,
       size: file.size,
       mimetype: file.type,
+      imageData: base64Image, // ✅ STORE IMAGE AS BASE64
       uploadedAt: new Date(),
       updatedAt: new Date(),
     });
 
     await imageDoc.save();
-    console.log("✅ UPLOAD: Database entry created");
+    console.log("✅ UPLOAD: Image saved to database successfully");
 
     return NextResponse.json(
       {
@@ -142,4 +117,14 @@ export async function POST(request) {
       { status: 500 }
     );
   }
+}
+
+// GET method for testing
+export async function GET() {
+  return NextResponse.json({
+    success: true,
+    message: "Upload endpoint is working!",
+    instructions:
+      "Use POST method with form-data containing 'image' file and optional 'section' field",
+  });
 }
