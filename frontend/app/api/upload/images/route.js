@@ -4,13 +4,13 @@ import ImageModel from "@/models/ImageModel";
 
 export async function POST(request) {
   try {
-    console.log("🔄 UPLOAD: Starting image upload process...");
+    console.log("🔄 Starting image upload to webstinline database...");
 
-    // Connect to database safely
+    // Connect to database
     const db = await connectDB();
 
     if (!db) {
-      console.log("❌ UPLOAD: No database connection");
+      console.log("❌ Database connection failed");
       return NextResponse.json(
         {
           success: false,
@@ -19,6 +19,7 @@ export async function POST(request) {
         { status: 503 }
       );
     }
+    console.log("✅ Connected to webstinline database");
 
     // Parse form data
     const formData = await request.formData();
@@ -26,88 +27,57 @@ export async function POST(request) {
     const section = formData.get("section") || "gallery";
 
     if (!file) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "No file uploaded",
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "File must be an image",
-        },
+        { error: "File must be an image" },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 4MB for base64)
-    const maxSize = 4 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "File too large",
-          details: `Maximum size is 4MB. Your file is ${(
-            file.size /
-            1024 /
-            1024
-          ).toFixed(2)}MB`,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Convert file to base64 (INSTEAD of saving to filesystem)
-    console.log("🔄 UPLOAD: Converting file to base64...");
+    // Convert to base64
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const base64Image = buffer.toString("base64");
 
-    // Generate unique filename
+    // Create unique filename
     const timestamp = Date.now();
-    const originalName = file.name;
-    const extension = originalName.split(".").pop();
-    const filename = `image_${timestamp}.${extension}`;
+    const filename = `image_${timestamp}.${file.name.split(".").pop()}`;
 
-    console.log("💾 UPLOAD: Saving to database...");
-
-    // Save to database WITH base64 image data
+    // Save to webstinline.images collection
     const imageDoc = new ImageModel({
       filename: filename,
-      originalName: originalName,
-      filepath: `/api/images/${filename}`, // Virtual path
+      originalName: file.name,
+      filepath: `/api/images/${filename}`,
       section: section,
       size: file.size,
       mimetype: file.type,
-      imageData: base64Image, // ✅ STORE IMAGE AS BASE64
+      imageData: base64Image, // Store as base64
       uploadedAt: new Date(),
-      updatedAt: new Date(),
     });
 
     await imageDoc.save();
-    console.log("✅ UPLOAD: Image saved to database successfully");
+    console.log("✅ Image saved to webstinline.images collection");
 
     return NextResponse.json(
       {
         success: true,
-        message: "Image uploaded successfully",
+        message: "Image uploaded to MongoDB successfully",
+        database: "webstinline",
+        collection: "images",
         image: {
           id: imageDoc._id,
-          filename: imageDoc.filename,
-          filepath: imageDoc.filepath,
-          section: imageDoc.section,
+          filename: filename,
+          section: section,
         },
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("❌ UPLOAD: Error:", error);
+    console.error("❌ Upload error:", error);
     return NextResponse.json(
       {
         success: false,
@@ -117,14 +87,4 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-}
-
-// GET method for testing
-export async function GET() {
-  return NextResponse.json({
-    success: true,
-    message: "Upload endpoint is working!",
-    instructions:
-      "Use POST method with form-data containing 'image' file and optional 'section' field",
-  });
 }

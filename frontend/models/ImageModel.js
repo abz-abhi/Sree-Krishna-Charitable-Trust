@@ -26,9 +26,9 @@ const imageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // ADD THIS FIELD - Store image as base64
   imageData: {
     type: String, // base64 encoded image
+    required: true,
   },
   uploadedAt: {
     type: Date,
@@ -40,10 +40,11 @@ const imageSchema = new mongoose.Schema({
   },
 });
 
-// Update the updatedAt field before saving
+// Update timestamp
 imageSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
+// Use your database name
 export default mongoose.models.Image || mongoose.model("Image", imageSchema);

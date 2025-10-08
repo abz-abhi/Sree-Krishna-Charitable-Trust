@@ -10,7 +10,6 @@ export default function AdminPage() {
   const [missionPreview, setMissionPreview] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<any[]>([]);
 
-  // Fetch already uploaded images
   useEffect(() => {
     fetch("/api/images")
       .then((res) => res.json())
@@ -23,10 +22,6 @@ export default function AdminPage() {
     formData.append("image", file);
     formData.append("section", section);
 
-    // ❌ WRONG: You're calling this
-    // const res = await fetch("/api/images/upload", {
-
-    // ✅ CORRECT: Should be this (based on your folder structure)
     const res = await fetch("/api/upload/images", {
       method: "POST",
       body: formData,
