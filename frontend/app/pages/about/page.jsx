@@ -65,7 +65,7 @@ const AboutPage = () => {
   };
 
   return (
-    <main className="bg-white text-[#1f4d40]">
+    <main className="bg-white text-white">
       {/* Hero Section */}
       <section className="relative w-full h-[400px] sm:h-[500px] lg:h-[600px]">
         {aboutImages.hero ? (
