@@ -32,14 +32,24 @@ export default function AdminPage() {
     formData.append("image", file);
     formData.append("section", section);
 
+    console.log(`🔄 Uploading to section: ${section}`, {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+    });
+
     const res = await fetch("/api/upload/images", {
       method: "POST",
       body: formData,
     });
 
     const data = await res.json();
+    console.log(`📡 Upload response for ${section}:`, data);
+
     if (res.ok) return data;
-    throw new Error(data.error || "Upload failed");
+    throw new Error(
+      data.error || data.details || `Upload failed for ${section}`
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,45 +58,105 @@ export default function AdminPage() {
     setUploading(true);
 
     try {
-      const uploadPromises = [];
+      const uploadResults = [];
+      let successCount = 0;
+      let errorMessages = [];
 
+      // Upload home image
       if (homeImage) {
-        uploadPromises.push(uploadImage(homeImage, "main"));
+        try {
+          const result = await uploadImage(homeImage, "main");
+          uploadResults.push({ section: "main", success: true, result });
+          successCount++;
+        } catch (err: any) {
+          uploadResults.push({
+            section: "main",
+            success: false,
+            error: err.message,
+          });
+          errorMessages.push(`Home: ${err.message}`);
+        }
       }
 
+      // Upload mission image
       if (missionImage) {
-        uploadPromises.push(uploadImage(missionImage, "mission"));
+        try {
+          const result = await uploadImage(missionImage, "mission");
+          uploadResults.push({ section: "mission", success: true, result });
+          successCount++;
+        } catch (err: any) {
+          uploadResults.push({
+            section: "mission",
+            success: false,
+            error: err.message,
+          });
+          errorMessages.push(`Mission: ${err.message}`);
+        }
       }
 
+      // Upload join hands image
       if (joinHandsImage) {
-        uploadPromises.push(uploadImage(joinHandsImage, "joinhands"));
+        try {
+          const result = await uploadImage(joinHandsImage, "joinhands");
+          uploadResults.push({ section: "joinhands", success: true, result });
+          successCount++;
+        } catch (err: any) {
+          uploadResults.push({
+            section: "joinhands",
+            success: false,
+            error: err.message,
+          });
+          errorMessages.push(`Join Hands: ${err.message}`);
+        }
       }
 
-      if (uploadPromises.length === 0) {
+      // Show results
+      if (uploadResults.length === 0) {
         setMessage("❌ Please select at least one image to upload");
-        setUploading(false);
-        return;
+      } else if (errorMessages.length === 0) {
+        setMessage(`✅ All ${successCount} images uploaded successfully!`);
+      } else if (successCount > 0) {
+        setMessage(
+          `⚠️ ${successCount} uploaded, ${
+            errorMessages.length
+          } failed: ${errorMessages.join(", ")}`
+        );
+      } else {
+        setMessage(`❌ All uploads failed: ${errorMessages.join(", ")}`);
       }
 
-      await Promise.all(uploadPromises);
-
-      setMessage("✅ All images uploaded successfully!");
-
-      // Clear all form data
-      setHomeImage(null);
-      setMissionImage(null);
-      setJoinHandsImage(null);
-      setHomePreview(null);
-      setMissionPreview(null);
-      setJoinHandsPreview(null);
+      // Clear successful uploads only
+      if (
+        homeImage &&
+        uploadResults.find((r) => r.section === "main" && r.success)
+      ) {
+        setHomeImage(null);
+        setHomePreview(null);
+      }
+      if (
+        missionImage &&
+        uploadResults.find((r) => r.section === "mission" && r.success)
+      ) {
+        setMissionImage(null);
+        setMissionPreview(null);
+      }
+      if (
+        joinHandsImage &&
+        uploadResults.find((r) => r.section === "joinhands" && r.success)
+      ) {
+        setJoinHandsImage(null);
+        setJoinHandsPreview(null);
+      }
 
       // Refresh images list
       await fetchImages();
 
       // Force refresh the entire page to update all sections
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      if (successCount > 0) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } catch (err: any) {
       console.error("Upload error:", err);
       setMessage(`❌ Upload failed: ${err.message}`);
@@ -102,7 +172,7 @@ export default function AdminPage() {
 
     // Get the latest image for the section
     return images.reduce((latest, current) => {
-      return new Date(current.uploadedAt) > new Date(latest.uploadedAt)
+      return new Date(current.updatedAt) > new Date(latest.updatedAt)
         ? current
         : latest;
     }, images[0]);
@@ -411,6 +481,8 @@ export default function AdminPage() {
             className={`mt-6 p-4 rounded text-center font-medium ${
               message.includes("✅")
                 ? "bg-green-50 text-green-700 border border-green-200"
+                : message.includes("⚠️")
+                ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
                 : "bg-red-50 text-red-700 border border-red-200"
             }`}
           >
@@ -474,3 +546,4 @@ export default function AdminPage() {
     </div>
   );
 }
+  
