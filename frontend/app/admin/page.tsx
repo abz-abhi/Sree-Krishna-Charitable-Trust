@@ -2,16 +2,132 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 
+// Define types for better TypeScript support
+type SectionKey = "home" | "about" | "shanthi" | "contact";
+
+type ImageConfig = {
+  key: string;
+  label: string;
+  description: string;
+};
+
+type SectionConfig = {
+  title: string;
+  images: ImageConfig[];
+};
+
+// Section configuration with proper typing
+const SECTIONS: Record<SectionKey, SectionConfig> = {
+  home: {
+    title: "🏠 Home Page",
+    images: [
+      {
+        key: "home-main",
+        label: "Home Page Main Image",
+        description: "Main banner image for homepage",
+      },
+      {
+        key: "home-mission",
+        label: "Mission Section Image",
+        description: "Image for mission section",
+      },
+      {
+        key: "home-joinhands",
+        label: "Join Hands Section Image",
+        description: "Image for join hands section",
+      },
+    ],
+  },
+  about: {
+    title: "📖 About Page",
+    images: [
+      {
+        key: "about-1",
+        label: "About Image 1",
+        description: "First about section image",
+      },
+      {
+        key: "about-2",
+        label: "About Image 2",
+        description: "Second about section image",
+      },
+      {
+        key: "about-3",
+        label: "About Image 3",
+        description: "Third about section image",
+      },
+      {
+        key: "about-4",
+        label: "About Image 4",
+        description: "Fourth about section image",
+      },
+      {
+        key: "about-5",
+        label: "About Image 5",
+        description: "Fifth about section image",
+      },
+    ],
+  },
+  shanthi: {
+    title: "🕊️ Shanthi Page",
+    images: [
+      {
+        key: "shanthi-1",
+        label: "Shanthi Image 1",
+        description: "First shanthi section image",
+      },
+      {
+        key: "shanthi-2",
+        label: "Shanthi Image 2",
+        description: "Second shanthi section image",
+      },
+      {
+        key: "shanthi-3",
+        label: "Shanthi Image 3",
+        description: "Third shanthi section image",
+      },
+      {
+        key: "shanthi-4",
+        label: "Shanthi Image 4",
+        description: "Fourth shanthi section image",
+      },
+      {
+        key: "shanthi-5",
+        label: "Shanthi Image 5",
+        description: "Fifth shanthi section image",
+      },
+      {
+        key: "shanthi-6",
+        label: "Shanthi Image 6",
+        description: "Sixth shanthi section image",
+      },
+      {
+        key: "shanthi-7",
+        label: "Shanthi Image 7",
+        description: "Seventh shanthi section image",
+      },
+    ],
+  },
+  contact: {
+    title: "📞 Contact Page",
+    images: [
+      {
+        key: "contact",
+        label: "Contact Page Image",
+        description: "Main image for contact page",
+      },
+    ],
+  },
+};
+
 export default function AdminPage() {
   const [message, setMessage] = useState("");
-  const [homeImage, setHomeImage] = useState<File | null>(null);
-  const [missionImage, setMissionImage] = useState<File | null>(null);
-  const [joinHandsImage, setJoinHandsImage] = useState<File | null>(null);
-  const [homePreview, setHomePreview] = useState<string | null>(null);
-  const [missionPreview, setMissionPreview] = useState<string | null>(null);
-  const [joinHandsPreview, setJoinHandsPreview] = useState<string | null>(null);
-  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<{ [key: string]: File }>(
+    {}
+  );
+  const [previews, setPreviews] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     fetchImages();
@@ -24,6 +140,43 @@ export default function AdminPage() {
       setUploadedImages(data);
     } catch (error) {
       console.error("Error fetching images:", error);
+      setMessage("❌ Failed to load images");
+    }
+  };
+
+  const findImage = (section: string) => {
+    return uploadedImages.find((img) => img.section === section);
+  };
+
+  const getImageSrc = (image: any) => {
+    if (image?.imageData) {
+      return `data:${image.mimetype};base64,${image.imageData}`;
+    }
+    return image?.filepath;
+  };
+
+  const getFileSize = (file: File) => {
+    return (file.size / 1024 / 1024).toFixed(2);
+  };
+
+  const handleFileSelect = (sectionKey: string, file: File | null) => {
+    if (file) {
+      setSelectedFiles((prev) => ({ ...prev, [sectionKey]: file }));
+      setPreviews((prev) => ({
+        ...prev,
+        [sectionKey]: URL.createObjectURL(file),
+      }));
+    } else {
+      setSelectedFiles((prev) => {
+        const newFiles = { ...prev };
+        delete newFiles[sectionKey];
+        return newFiles;
+      });
+      setPreviews((prev) => {
+        const newPreviews = { ...prev };
+        delete newPreviews[sectionKey];
+        return newPreviews;
+      });
     }
   };
 
@@ -32,453 +185,259 @@ export default function AdminPage() {
     formData.append("image", file);
     formData.append("section", section);
 
-    console.log(`🔄 Uploading to section: ${section}`, {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-    });
-
     const res = await fetch("/api/upload/images", {
       method: "POST",
       body: formData,
     });
 
     const data = await res.json();
-    console.log(`📡 Upload response for ${section}:`, data);
-
     if (res.ok) return data;
     throw new Error(
       data.error || data.details || `Upload failed for ${section}`
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage("");
+  const handleSectionUpload = async (sectionKey: string) => {
+    const file = selectedFiles[sectionKey];
+    if (!file) return;
+
     setUploading(true);
+    setMessage("");
 
     try {
-      const uploadResults = [];
-      let successCount = 0;
-      let errorMessages = [];
+      await uploadImage(file, sectionKey);
 
-      // Upload home image
-      if (homeImage) {
-        try {
-          const result = await uploadImage(homeImage, "main");
-          uploadResults.push({ section: "main", success: true, result });
-          successCount++;
-        } catch (err: any) {
-          uploadResults.push({
-            section: "main",
-            success: false,
-            error: err.message,
-          });
-          errorMessages.push(`Home: ${err.message}`);
-        }
-      }
+      // Get the section name and label safely
+      const sectionName = sectionKey.split("-")[0] as SectionKey;
+      const sectionLabel =
+        SECTIONS[sectionName]?.images.find((img) => img.key === sectionKey)
+          ?.label || sectionKey;
 
-      // Upload mission image
-      if (missionImage) {
-        try {
-          const result = await uploadImage(missionImage, "mission");
-          uploadResults.push({ section: "mission", success: true, result });
-          successCount++;
-        } catch (err: any) {
-          uploadResults.push({
-            section: "mission",
-            success: false,
-            error: err.message,
-          });
-          errorMessages.push(`Mission: ${err.message}`);
-        }
-      }
+      setMessage(`✅ ${sectionLabel} uploaded successfully!`);
 
-      // Upload join hands image
-      if (joinHandsImage) {
-        try {
-          const result = await uploadImage(joinHandsImage, "joinhands");
-          uploadResults.push({ section: "joinhands", success: true, result });
-          successCount++;
-        } catch (err: any) {
-          uploadResults.push({
-            section: "joinhands",
-            success: false,
-            error: err.message,
-          });
-          errorMessages.push(`Join Hands: ${err.message}`);
-        }
-      }
-
-      // Show results
-      if (uploadResults.length === 0) {
-        setMessage("❌ Please select at least one image to upload");
-      } else if (errorMessages.length === 0) {
-        setMessage(`✅ All ${successCount} images uploaded successfully!`);
-      } else if (successCount > 0) {
-        setMessage(
-          `⚠️ ${successCount} uploaded, ${
-            errorMessages.length
-          } failed: ${errorMessages.join(", ")}`
-        );
-      } else {
-        setMessage(`❌ All uploads failed: ${errorMessages.join(", ")}`);
-      }
-
-      // Clear successful uploads only
-      if (
-        homeImage &&
-        uploadResults.find((r) => r.section === "main" && r.success)
-      ) {
-        setHomeImage(null);
-        setHomePreview(null);
-      }
-      if (
-        missionImage &&
-        uploadResults.find((r) => r.section === "mission" && r.success)
-      ) {
-        setMissionImage(null);
-        setMissionPreview(null);
-      }
-      if (
-        joinHandsImage &&
-        uploadResults.find((r) => r.section === "joinhands" && r.success)
-      ) {
-        setJoinHandsImage(null);
-        setJoinHandsPreview(null);
-      }
-
-      // Refresh images list
+      // Clear this file only
+      handleFileSelect(sectionKey, null);
       await fetchImages();
-
-      // Force refresh the entire page to update all sections
-      if (successCount > 0) {
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      }
     } catch (err: any) {
-      console.error("Upload error:", err);
       setMessage(`❌ Upload failed: ${err.message}`);
     } finally {
       setUploading(false);
     }
   };
 
-  // Helper: find existing image by section
-  const findImage = (section: string) => {
-    const images = uploadedImages.filter((img) => img.section === section);
-    if (images.length === 0) return null;
+  const handleBulkUpload = async () => {
+    const entries = Object.entries(selectedFiles);
+    if (entries.length === 0) {
+      setMessage("❌ Please select at least one image to upload");
+      return;
+    }
 
-    // Get the latest image for the section
-    return images.reduce((latest, current) => {
-      return new Date(current.updatedAt) > new Date(latest.updatedAt)
-        ? current
-        : latest;
-    }, images[0]);
-  };
+    setUploading(true);
+    setMessage("");
 
-  // Clear file input and preview
-  const clearFileInput = (type: "home" | "mission" | "joinhands") => {
-    if (type === "home") {
-      setHomeImage(null);
-      setHomePreview(null);
-    } else if (type === "mission") {
-      setMissionImage(null);
-      setMissionPreview(null);
-    } else {
-      setJoinHandsImage(null);
-      setJoinHandsPreview(null);
+    try {
+      let successCount = 0;
+      let errorMessages = [];
+
+      for (const [sectionKey, file] of entries) {
+        try {
+          await uploadImage(file, sectionKey);
+          successCount++;
+        } catch (err: any) {
+          errorMessages.push(`${sectionKey}: ${err.message}`);
+        }
+      }
+
+      if (errorMessages.length === 0) {
+        setMessage(`✅ All ${successCount} images uploaded successfully!`);
+      } else if (successCount > 0) {
+        setMessage(
+          `⚠️ ${successCount} uploaded, ${errorMessages.length} failed`
+        );
+      } else {
+        setMessage(`❌ All uploads failed`);
+      }
+
+      // Clear all files
+      setSelectedFiles({});
+      setPreviews({});
+      await fetchImages();
+
+      // Refresh page
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (err: any) {
+      setMessage(`❌ Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
     }
   };
 
-  // Function to get image source (handles base64)
-  const getImageSrc = (image: any) => {
-    if (image?.imageData) {
-      return `data:${image.mimetype};base64,${image.imageData}`;
-    }
-    return image?.filepath || "/images/placeholder.jpg";
-  };
+  const ImageUploadSection = ({
+    sectionKey,
+    label,
+    description,
+  }: {
+    sectionKey: string;
+    label: string;
+    description: string;
+  }) => {
+    const currentImage = findImage(sectionKey);
+    const hasNewFile = !!selectedFiles[sectionKey];
+    const preview = previews[sectionKey];
 
-  // Safe file size display
-  const getFileSize = (file: File | null) => {
-    if (!file || !file.size) return "0.00";
-    return (file.size / 1024 / 1024).toFixed(2);
+    return (
+      <div className="border border-gray-200 rounded-lg p-6 bg-white hover:bg-gray-50 transition-colors">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">{label}</h3>
+            <p className="text-sm text-gray-600 mt-1">{description}</p>
+          </div>
+          <span
+            className={`px-2 py-1 text-xs rounded-full ${
+              currentImage
+                ? "bg-green-100 text-green-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {currentImage ? "✅ Uploaded" : "⏳ Pending"}
+          </span>
+        </div>
+
+        {/* Current Image */}
+        {currentImage && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-2">Current Image:</p>
+            <div className="relative w-full h-32 rounded-md overflow-hidden border">
+              <Image
+                src={getImageSrc(currentImage)}
+                alt={label}
+                fill
+                className="object-cover"
+                unoptimized={!!currentImage.imageData}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Size: {(currentImage.size / 1024 / 1024).toFixed(2)} MB •
+              Uploaded: {new Date(currentImage.uploadedAt).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+
+        {/* File Input */}
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Upload New Image:
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) =>
+              handleFileSelect(sectionKey, e.target.files?.[0] || null)
+            }
+            className="block w-full border border-gray-300 p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+
+        {/* Preview */}
+        {preview && (
+          <div className="mt-3 p-3 border border-blue-200 rounded bg-blue-50">
+            <p className="text-sm font-medium text-blue-700 mb-2">
+              New Image Preview:
+            </p>
+            <div className="relative w-full h-32 rounded-md overflow-hidden">
+              <Image
+                src={preview}
+                alt="Preview"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <p className="text-xs text-gray-600">
+                File: {selectedFiles[sectionKey]?.name} (
+                {getFileSize(selectedFiles[sectionKey])} MB)
+              </p>
+              <button
+                type="button"
+                onClick={() => handleFileSelect(sectionKey, null)}
+                className="text-xs text-red-600 hover:text-red-800 font-medium"
+              >
+                ✕ Remove
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Individual Upload Button */}
+        {hasNewFile && (
+          <button
+            type="button"
+            onClick={() => handleSectionUpload(sectionKey)}
+            disabled={uploading}
+            className="w-full mt-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+          >
+            📤 Upload This Image
+          </button>
+        )}
+      </div>
+    );
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-2xl">
-        <h1 className="text-3xl font-bold mb-8 text-[#1f4d40] text-center">
-          Admin Dashboard - Image Management
-        </h1>
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-[#1f4d40] mb-2">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Manage all website images from one place
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          {/* HOME PAGE IMAGE */}
-          <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-            <h2 className="text-xl font-semibold text-emerald-700 mb-4">
-              🏠 Home Page Image
-            </h2>
-
-            {/* Current Home Image */}
-            {findImage("main") && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
-                  Current Home Image:
+        {/* Bulk Upload Button */}
+        {Object.keys(selectedFiles).length > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="font-medium text-blue-800">
+                  Ready to upload {Object.keys(selectedFiles).length} image(s)
                 </p>
-                <div className="relative w-full h-48 rounded-md overflow-hidden border">
-                  <Image
-                    src={getImageSrc(findImage("main"))}
-                    alt="Home"
-                    fill
-                    className="object-cover"
-                    unoptimized={!!findImage("main")?.imageData}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Uploaded:{" "}
-                  {new Date(findImage("main").uploadedAt).toLocaleDateString()}
-                  <br />
-                  Size: {(findImage("main").size / 1024 / 1024).toFixed(2)} MB
+                <p className="text-sm text-blue-600">
+                  {Object.keys(selectedFiles)
+                    .map((key) => {
+                      const sectionName = key.split("-")[0] as SectionKey;
+                      return (
+                        SECTIONS[sectionName]?.images.find(
+                          (img) => img.key === key
+                        )?.label || key
+                      );
+                    })
+                    .join(", ")}
                 </p>
               </div>
-            )}
-
-            {/* File Input */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload New Home Image:
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setHomeImage(file);
-                  if (file) setHomePreview(URL.createObjectURL(file));
-                }}
-                className="block w-full border border-gray-300 p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
+              <button
+                onClick={handleBulkUpload}
+                disabled={uploading}
+                className="px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors flex items-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  "🚀 Upload All Selected"
+                )}
+              </button>
             </div>
-
-            {/* Preview and Clear */}
-            {homePreview && homeImage && (
-              <div className="mt-4 p-3 border border-blue-200 rounded bg-blue-50">
-                <p className="text-sm font-medium text-blue-700 mb-2">
-                  New Home Image Preview:
-                </p>
-                <div className="relative w-full h-40 rounded-md overflow-hidden">
-                  <Image
-                    src={homePreview}
-                    alt="Home Preview"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <p className="text-xs text-gray-600">
-                    File: {homeImage.name} ({getFileSize(homeImage)} MB)
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => clearFileInput("home")}
-                    className="text-xs text-red-600 hover:text-red-800 font-medium"
-                  >
-                    ✕ Remove
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
-
-          {/* MISSION SECTION IMAGE */}
-          <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-            <h2 className="text-xl font-semibold text-emerald-700 mb-4">
-              🎯 Mission Section Image
-            </h2>
-
-            {/* Current Mission Image */}
-            {findImage("mission") && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
-                  Current Mission Image:
-                </p>
-                <div className="relative w-full h-48 rounded-md overflow-hidden border">
-                  <Image
-                    src={getImageSrc(findImage("mission"))}
-                    alt="Mission"
-                    fill
-                    className="object-cover"
-                    unoptimized={!!findImage("mission")?.imageData}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Uploaded:{" "}
-                  {new Date(
-                    findImage("mission").uploadedAt
-                  ).toLocaleDateString()}
-                  <br />
-                  Size: {(findImage("mission").size / 1024 / 1024).toFixed(
-                    2
-                  )}{" "}
-                  MB
-                </p>
-              </div>
-            )}
-
-            {/* File Input */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload New Mission Image:
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setMissionImage(file);
-                  if (file) setMissionPreview(URL.createObjectURL(file));
-                }}
-                className="block w-full border border-gray-300 p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
-            </div>
-
-            {/* Preview and Clear */}
-            {missionPreview && missionImage && (
-              <div className="mt-4 p-3 border border-blue-200 rounded bg-blue-50">
-                <p className="text-sm font-medium text-blue-700 mb-2">
-                  New Mission Image Preview:
-                </p>
-                <div className="relative w-full h-40 rounded-md overflow-hidden">
-                  <Image
-                    src={missionPreview}
-                    alt="Mission Preview"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <p className="text-xs text-gray-600">
-                    File: {missionImage.name} ({getFileSize(missionImage)} MB)
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => clearFileInput("mission")}
-                    className="text-xs text-red-600 hover:text-red-800 font-medium"
-                  >
-                    ✕ Remove
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* JOIN HANDS SECTION IMAGE */}
-          <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-            <h2 className="text-xl font-semibold text-emerald-700 mb-4">
-              🤝 Join Hands Section Image
-            </h2>
-
-            {/* Current Join Hands Image */}
-            {findImage("joinhands") && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
-                  Current Join Hands Image:
-                </p>
-                <div className="relative w-full h-48 rounded-md overflow-hidden border">
-                  <Image
-                    src={getImageSrc(findImage("joinhands"))}
-                    alt="Join Hands"
-                    fill
-                    className="object-cover"
-                    unoptimized={!!findImage("joinhands")?.imageData}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Uploaded:{" "}
-                  {new Date(
-                    findImage("joinhands").uploadedAt
-                  ).toLocaleDateString()}
-                  <br />
-                  Size: {(findImage("joinhands").size / 1024 / 1024).toFixed(
-                    2
-                  )}{" "}
-                  MB
-                </p>
-              </div>
-            )}
-
-            {/* File Input */}
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload New Join Hands Image:
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  setJoinHandsImage(file);
-                  if (file) setJoinHandsPreview(URL.createObjectURL(file));
-                }}
-                className="block w-full border border-gray-300 p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
-            </div>
-
-            {/* Preview and Clear */}
-            {joinHandsPreview && joinHandsImage && (
-              <div className="mt-4 p-3 border border-blue-200 rounded bg-blue-50">
-                <p className="text-sm font-medium text-blue-700 mb-2">
-                  New Join Hands Image Preview:
-                </p>
-                <div className="relative w-full h-40 rounded-md overflow-hidden">
-                  <Image
-                    src={joinHandsPreview}
-                    alt="Join Hands Preview"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <p className="text-xs text-gray-600">
-                    File: {joinHandsImage.name} ({getFileSize(joinHandsImage)}{" "}
-                    MB)
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => clearFileInput("joinhands")}
-                    className="text-xs text-red-600 hover:text-red-800 font-medium"
-                  >
-                    ✕ Remove
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={
-              (!homeImage && !missionImage && !joinHandsImage) || uploading
-            }
-            className="w-full py-3 bg-[#1f4d40] text-white font-semibold rounded-md hover:bg-[#16382f] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {uploading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Uploading...
-              </>
-            ) : (
-              "📤 Save All Images"
-            )}
-          </button>
-        </form>
+        )}
 
         {/* Message Display */}
         {message && (
           <div
-            className={`mt-6 p-4 rounded text-center font-medium ${
+            className={`mb-6 p-4 rounded text-center font-medium ${
               message.includes("✅")
                 ? "bg-green-50 text-green-700 border border-green-200"
                 : message.includes("⚠️")
@@ -490,49 +449,63 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Uploaded Images Summary */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        {/* Sections */}
+        {(Object.entries(SECTIONS) as [SectionKey, SectionConfig][]).map(
+          ([sectionKey, section]) => (
+            <div key={sectionKey} className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {section.title}
+                </h2>
+                <span className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full">
+                  {section.images.length} image
+                  {section.images.length > 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {section.images.map((image) => (
+                  <ImageUploadSection
+                    key={image.key}
+                    sectionKey={image.key}
+                    label={image.label}
+                    description={image.description}
+                  />
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
+        {/* Storage Summary */}
+        <div className="mt-12 p-6 bg-white rounded-lg border border-gray-200">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
             📊 Storage Summary
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-            <div className="text-center p-3 bg-blue-50 rounded border border-blue-200">
-              <div className="text-2xl font-bold text-blue-700">
-                {uploadedImages.filter((img) => img.section === "main").length}
-              </div>
-              <div className="text-blue-600 font-medium">Home Images</div>
-            </div>
-            <div className="text-center p-3 bg-green-50 rounded border border-green-200">
-              <div className="text-2xl font-bold text-green-700">
-                {
-                  uploadedImages.filter((img) => img.section === "mission")
-                    .length
-                }
-              </div>
-              <div className="text-green-600 font-medium">Mission Images</div>
-            </div>
-            <div className="text-center p-3 bg-purple-50 rounded border border-purple-200">
-              <div className="text-2xl font-bold text-purple-700">
-                {
-                  uploadedImages.filter((img) => img.section === "joinhands")
-                    .length
-                }
-              </div>
-              <div className="text-purple-600 font-medium">
-                Join Hands Images
-              </div>
-            </div>
-            <div className="text-center p-3 bg-orange-50 rounded border border-orange-200">
-              <div className="text-2xl font-bold text-orange-700">
-                {
-                  uploadedImages.filter((img) => img.section === "gallery")
-                    .length
-                }
-              </div>
-              <div className="text-orange-600 font-medium">Gallery Images</div>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {(Object.entries(SECTIONS) as [SectionKey, SectionConfig][]).map(
+              ([sectionKey, section]) => (
+                <div
+                  key={sectionKey}
+                  className="text-center p-4 bg-gray-50 rounded border"
+                >
+                  <div className="text-2xl font-bold text-[#1f4d40]">
+                    {
+                      uploadedImages.filter((img) =>
+                        img.section.startsWith(sectionKey)
+                      ).length
+                    }
+                  </div>
+                  <div className="text-gray-600 font-medium">
+                    {section.title}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {section.images.length} slots available
+                  </div>
+                </div>
+              )
+            )}
           </div>
-
           <div className="mt-4 text-center">
             <button
               onClick={fetchImages}
@@ -546,4 +519,3 @@ export default function AdminPage() {
     </div>
   );
 }
-  

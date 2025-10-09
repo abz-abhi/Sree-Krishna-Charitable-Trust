@@ -11,7 +11,6 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    // Get all images from sreekrishna database
     const images = await ImageModel.find({}).sort({ uploadedAt: -1 });
     console.log(`📁 Found ${images.length} images in sreekrishna database`);
 
