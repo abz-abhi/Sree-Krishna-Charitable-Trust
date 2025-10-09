@@ -51,7 +51,7 @@ export default function SanthiBhavanContactPage() {
   };
 
   // Default placeholder image
-  const defaultHeroImage = "/images/santhi-bhavan-reach-out.jpg";
+  const defaultHeroImage = "/api/images";
 
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
