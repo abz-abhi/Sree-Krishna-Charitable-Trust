@@ -1,10 +1,13 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Handshake, ChevronRight } from "lucide-react";
 
 export default function SanthiBhavanContactPage() {
+  const [contactImages, setContactImages] = useState({});
+  const [loading, setLoading] = useState(true);
+
   const trustInfo = {
     reg: "Reg. No. 86/2021 Dt-18-10-2021",
     address: "Thrichambaram, P.O. Taliparamba, Kannur District – 670 141",
@@ -15,6 +18,41 @@ export default function SanthiBhavanContactPage() {
     email: "skcharitabletpba@gmail.com",
   };
 
+  useEffect(() => {
+    const fetchContactImages = async () => {
+      try {
+        const response = await fetch("/api/images");
+        const images = await response.json();
+
+        // Organize images by their section
+        const organizedImages = {};
+
+        // Hero image (contact-1)
+        const heroImage = images.find((img) => img.section === "contact-1");
+        organizedImages.hero = heroImage || null;
+
+        setContactImages(organizedImages);
+      } catch (err) {
+        console.error("Error fetching contact images:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContactImages();
+  }, []);
+
+  // Function to get image source (handles base64)
+  const getImageSrc = (image) => {
+    if (image?.imageData) {
+      return `data:${image.mimetype};base64,${image.imageData}`;
+    }
+    return image?.filepath;
+  };
+
+  // Default placeholder image
+  const defaultHeroImage = "/images/santhi-bhavan-reach-out.jpg";
+
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -24,13 +62,27 @@ export default function SanthiBhavanContactPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#ffffff] to-[#e7f0eb] text-gray-800">
       {/* Header Section with Image */}
       <section className="relative w-full h-[500px] flex items-end justify-center overflow-hidden shadow-2xl">
-        <Image
-          src="/images/santhi-bhavan-reach-out.jpg" // 👈 Add an image showing construction or community progress
-          alt="Santhi Bhavan new floor construction"
-          fill
-          className="object-cover brightness-75 saturate-110"
-          priority
-        />
+        {contactImages.hero ? (
+          <Image
+            src={getImageSrc(contactImages.hero)}
+            alt={
+              contactImages.hero.originalName ||
+              "Santhi Bhavan new floor construction"
+            }
+            fill
+            className="object-cover brightness-75 saturate-110"
+            priority
+            unoptimized={!!contactImages.hero.imageData}
+          />
+        ) : (
+          <Image
+            src={defaultHeroImage}
+            alt="Santhi Bhavan new floor construction"
+            fill
+            className="object-cover brightness-75 saturate-110"
+            priority
+          />
+        )}
         <div className="relative z-10 text-center pb-16 px-6 bg-gradient-to-t from-[#1f4d40]/80 via-transparent w-full">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -49,6 +101,13 @@ export default function SanthiBhavanContactPage() {
             SREEKRISHNA CHARITABLE TRUST & SANTHI BHAVAN
           </motion.p>
         </div>
+
+        {/* Loading indicator */}
+        {loading && (
+          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+            <div className="text-white text-lg">Loading image...</div>
+          </div>
+        )}
       </section>
 
       {/* Main Content: Progress & Call to Action */}
@@ -88,7 +147,7 @@ export default function SanthiBhavanContactPage() {
             <motion.a
               whileHover={{ scale: 1.02, backgroundColor: "#2a6655" }}
               whileTap={{ scale: 0.98 }}
-              href="/donate" // Link to your donation page
+              href="/donate"
               className="mt-8 inline-flex items-center justify-center w-full text-center bg-[#1f4d40] text-white font-bold px-8 py-4 rounded-lg shadow-xl hover:bg-green-700 transition duration-300 text-lg"
             >
               Blessings and Cooperation with Helpful Arms{" "}

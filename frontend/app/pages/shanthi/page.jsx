@@ -452,13 +452,8 @@ export default function SanthiBhavanPage() {
             <p className="text-gray-500">Loading images...</p>
           ) : (
             <div className="inline-block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-              <p className="text-blue-700 text-sm">
-                {Object.values(shanthiImages).filter((img) => img).length > 0
-                  ? `✅ ${
-                      Object.values(shanthiImages).filter((img) => img).length
-                    } custom images loaded`
-                  : "ℹ️ Using default images - Upload custom images from admin panel"}
-              </p>
+              
+               
             </div>
           )}
         </div>
