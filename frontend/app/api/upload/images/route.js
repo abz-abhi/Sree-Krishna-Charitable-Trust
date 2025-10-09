@@ -19,7 +19,7 @@ const SECTION_LIMITS = {
   "shanthi-5": 1,
   "shanthi-6": 1,
   "shanthi-7": 1,
-  "contact-1": 1,
+  contact: 1,
 };
 
 export async function POST(request) {

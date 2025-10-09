@@ -2,44 +2,29 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Handshake, ChevronRight } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Heart } from "lucide-react";
 
-export default function SanthiBhavanContactPage() {
-  const [contactImages, setContactImages] = useState({});
+export default function ContactPage() {
+  const [contactImage, setContactImage] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const trustInfo = {
-    reg: "Reg. No. 86/2021 Dt-18-10-2021",
-    address: "Thrichambaram, P.O. Taliparamba, Kannur District – 670 141",
-    phone1: "94460 84671",
-    phone2: "82811 58662",
-    phone3: "96052 02057",
-    phone4: "80788 77671",
-    email: "skcharitabletpba@gmail.com",
-  };
-
   useEffect(() => {
-    const fetchContactImages = async () => {
+    const fetchContactImage = async () => {
       try {
         const response = await fetch("/api/images");
         const images = await response.json();
 
-        // Organize images by their section
-        const organizedImages = {};
-
-        // Hero image (contact-1)
-        const heroImage = images.find((img) => img.section === "contact-1");
-        organizedImages.hero = heroImage || null;
-
-        setContactImages(organizedImages);
+        // Look for the contact section image
+        const contactImg = images.find((img) => img.section === "contact");
+        setContactImage(contactImg || null);
       } catch (err) {
-        console.error("Error fetching contact images:", err);
+        console.error("Error fetching contact image:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchContactImages();
+    fetchContactImage();
   }, []);
 
   // Function to get image source (handles base64)
@@ -50,197 +35,442 @@ export default function SanthiBhavanContactPage() {
     return image?.filepath;
   };
 
-  // Default placeholder image
-  const defaultHeroImage = "/api/images";
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6 },
+    },
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ffffff] to-[#e7f0eb] text-gray-800">
-      {/* Header Section with Image */}
-      <section className="relative w-full h-[500px] flex items-end justify-center overflow-hidden shadow-2xl">
-        {contactImages.hero ? (
+    <div className="min-h-screen bg-gradient-to-b from-[#f8fdfb] to-[#e8f4f0]">
+      {/* Hero Section with Dynamic Image */}
+      <section className="relative w-full h-[400px] sm:h-[500px] flex items-center justify-center overflow-hidden">
+        {contactImage ? (
           <Image
-            src={getImageSrc(contactImages.hero)}
+            src={getImageSrc(contactImage)}
             alt={
-              contactImages.hero.originalName ||
-              "Santhi Bhavan new floor construction"
+              contactImage.originalName ||
+              "Contact Sree Krishna Charitable Trust"
             }
             fill
-            className="object-cover brightness-75 saturate-110"
+            className="object-cover brightness-[.6]"
+            unoptimized={!!contactImage.imageData}
             priority
-            unoptimized={!!contactImages.hero.imageData}
           />
         ) : (
           <Image
-            src={defaultHeroImage}
-            alt="Santhi Bhavan new floor construction"
+            src="/images/contact-hero.jpg"
+            alt="Contact Sree Krishna Charitable Trust"
             fill
-            className="object-cover brightness-75 saturate-110"
+            className="object-cover brightness-[.6]"
             priority
           />
         )}
-        <div className="relative z-10 text-center pb-16 px-6 bg-gradient-to-t from-[#1f4d40]/80 via-transparent w-full">
+        <div className="relative z-10 text-center px-6 max-w-4xl">
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-5xl sm:text-6xl font-extrabold mb-3 drop-shadow-lg text-white tracking-tight"
+            className="text-5xl sm:text-6xl font-bold mb-6 text-white drop-shadow-2xl"
           >
-            Reach Out Today
+            Get In Touch
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            className="text-xl sm:text-2xl text-white/90 font-light"
+            transition={{ delay: 0.3, duration: 0.8 }}
+            className="text-xl sm:text-2xl text-white/95 font-light max-w-2xl mx-auto"
           >
-            SREEKRISHNA CHARITABLE TRUST & SANTHI BHAVAN
+            Your support can bring smiles to many elderly lives. Let's connect
+            and make a difference together.
           </motion.p>
         </div>
-
-        {/* Loading indicator */}
-        {loading && (
-          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
-            <div className="text-white text-lg">Loading image...</div>
-          </div>
-        )}
       </section>
 
-      {/* Main Content: Progress & Call to Action */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="grid lg:grid-cols-3 gap-12">
-          {/* Progress Card */}
-          <motion.div
-            {...fadeInUp}
-            className="lg:col-span-2 p-8 bg-white rounded-xl shadow-2xl border-t-4 border-[#1f4d40]"
-          >
-            <h2 className="text-3xl font-bold mb-4 text-[#1f4d40] flex items-center">
-              <Handshake className="w-7 h-7 mr-3 text-green-600" />
-              Our Urgent Need & Progress
-            </h2>
-            <p className="text-lg leading-relaxed text-gray-700 mb-6">
-              <span className="font-semibold text-[#1f4d40]">
-                We are near the finish line!
-              </span>{" "}
-              We expect to open our **new floor** soon to shift our beloved
-              inmates from the current rented building to a safe and permanent
-              home.
-            </p>
-            <div className="bg-green-50 p-6 rounded-lg border border-green-200 shadow-inner">
-              <p className="text-xl font-medium text-green-800 mb-3">
-                Current Status:
+      {/* Contact Information & Form Section */}
+      <section className="py-16 sm:py-20 px-6 md:px-12 lg:px-20">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16"
+        >
+          {/* Contact Information */}
+          <motion.div variants={itemVariants} className="space-y-8">
+            <div>
+              <h2 className="text-4xl font-bold text-[#1f4d40] mb-4">
+                Contact Information
+              </h2>
+              <p className="text-gray-600 text-lg">
+                Reach out to us for any inquiries, support, or to visit our
+                facility. We're here to help and welcome your involvement.
               </p>
-              <ul className="space-y-2 text-gray-700 list-disc list-inside">
-                <li>We have successfully finished the **Ground Floor**.</li>
-                <li>Construction for the **First Floor** has begun.</li>
-                <li>
-                  <span className="font-bold">It is in your hand:</span> The
-                  speed of finishing this dream project directly depends on the
-                  support we receive.
-                </li>
-              </ul>
             </div>
-            <motion.a
-              whileHover={{ scale: 1.02, backgroundColor: "#2a6655" }}
-              whileTap={{ scale: 0.98 }}
-              href="/donate"
-              className="mt-8 inline-flex items-center justify-center w-full text-center bg-[#1f4d40] text-white font-bold px-8 py-4 rounded-lg shadow-xl hover:bg-green-700 transition duration-300 text-lg"
-            >
-              Blessings and Cooperation with Helpful Arms{" "}
-              <ChevronRight className="ml-2 w-5 h-5" />
-            </motion.a>
-          </motion.div>
 
-          {/* Contact Details Card */}
-          <motion.div
-            {...fadeInUp}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="lg:col-span-1 p-8 bg-white rounded-xl shadow-2xl border-t-4 border-green-500"
-          >
-            <h2 className="text-3xl font-bold mb-6 text-green-700">
-              Get in Touch
-            </h2>
-
+            {/* Contact Details */}
             <div className="space-y-6">
               {/* Address */}
-              <div className="flex items-start">
-                <MapPin className="w-6 h-6 mr-4 text-red-500 flex-shrink-0 mt-1" />
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <MapPin className="w-6 h-6 text-green-600" />
+                </div>
                 <div>
-                  <p className="font-semibold text-[#1f4d40]">Trust Address</p>
-                  <p className="text-gray-600">{trustInfo.address}</p>
-                  <p className="text-sm italic text-gray-500">
-                    {trustInfo.reg}
+                  <h3 className="font-semibold text-gray-800 text-lg mb-1">
+                    Our Address
+                  </h3>
+                  <p className="text-gray-600">
+                    Santhi Bhavan Old Age Home
+                    <br />
+                    Near Trichambaram Temple
+                    <br />
+                    Taliparamba, Kannur District
+                    <br />
+                    Kerala - 670141
                   </p>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Phone */}
-              <div>
-                <div className="flex items-center mb-1">
-                  <Phone className="w-6 h-6 mr-4 text-blue-500 flex-shrink-0" />
-                  <p className="font-semibold text-[#1f4d40]">
-                    Contact Numbers
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Phone className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-lg mb-1">
+                    Phone Numbers
+                  </h3>
+                  <p className="text-gray-600">
+                    +91 12345 67890
+                    <br />
+                    +91 98765 43210
                   </p>
                 </div>
-                <div className="ml-10 space-y-1">
-                  <a
-                    href={`tel:${trustInfo.phone1}`}
-                    className="block text-gray-700 hover:text-green-600 transition"
-                  >
-                    {trustInfo.phone1}
-                  </a>
-                  <a
-                    href={`tel:${trustInfo.phone2}`}
-                    className="block text-gray-700 hover:text-green-600 transition"
-                  >
-                    {trustInfo.phone2}
-                  </a>
-                  <a
-                    href={`tel:${trustInfo.phone3}`}
-                    className="block text-gray-700 hover:text-green-600 transition"
-                  >
-                    {trustInfo.phone3}
-                  </a>
-                  <a
-                    href={`tel:${trustInfo.phone4}`}
-                    className="block text-gray-700 hover:text-green-600 transition"
-                  >
-                    {trustInfo.phone4}
-                  </a>
-                </div>
-              </div>
+              </motion.div>
 
               {/* Email */}
-              <div className="flex items-center">
-                <Mail className="w-6 h-6 mr-4 text-yellow-600 flex-shrink-0" />
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <Mail className="w-6 h-6 text-purple-600" />
+                </div>
                 <div>
-                  <p className="font-semibold text-[#1f4d40]">Email Us</p>
-                  <a
-                    href={`mailto:${trustInfo.email}`}
-                    className="text-gray-700 hover:text-green-600 transition break-all"
+                  <h3 className="font-semibold text-gray-800 text-lg mb-1">
+                    Email Address
+                  </h3>
+                  <p className="text-gray-600">
+                    info@sreekrishnatrust.org
+                    <br />
+                    support@sreekrishnatrust.org
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Visiting Hours */}
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <Clock className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-800 text-lg mb-1">
+                    Visiting Hours
+                  </h3>
+                  <p className="text-gray-600">
+                    Monday - Sunday: 9:00 AM - 6:00 PM
+                    <br />
+                    <span className="text-sm text-gray-500">
+                      Prior appointment recommended
+                    </span>
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Trust Registration */}
+            <motion.div
+              variants={itemVariants}
+              className="bg-[#1f4d40] text-white p-6 rounded-xl shadow-lg"
+            >
+              <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-300" />
+                Registered Trust
+              </h3>
+              <p className="text-green-100">
+                Sree Krishna Charitable Trust
+                <br />
+                Registration No: 86/21
+                <br />
+                Under Government of Kerala
+              </p>
+            </motion.div>
+          </motion.div>
+
+          {/* Contact Form */}
+          <motion.div variants={itemVariants} className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <h2 className="text-3xl font-bold text-[#1f4d40] mb-2">
+                Send us a Message
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Fill out the form below and we'll get back to you as soon as
+                possible.
+              </p>
+
+              <form className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label
+                      htmlFor="name"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    {trustInfo.email}
-                  </a>
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                    placeholder="Enter your email address"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="subject"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Subject *
+                  </label>
+                  <select
+                    id="subject"
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                  >
+                    <option value="">Select a subject</option>
+                    <option value="donation">Donation Inquiry</option>
+                    <option value="volunteer">Volunteer Opportunity</option>
+                    <option value="visit">Schedule a Visit</option>
+                    <option value="support">Elderly Support</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="message"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Message *
+                  </label>
+                  <textarea
+                    id="message"
+                    required
+                    rows={5}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300"
+                    placeholder="Tell us how you'd like to help or any questions you have..."
+                  ></textarea>
+                </div>
+
+                <motion.button
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 10px 25px -3px rgba(31, 77, 64, 0.3)",
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  className="w-full bg-[#1f4d40] text-white font-semibold py-4 px-6 rounded-lg hover:bg-[#2a6655] transition-all duration-300 flex items-center justify-center gap-3"
+                >
+                  <Mail className="w-5 h-5" />
+                  Send Message
+                </motion.button>
+              </form>
+            </div>
+
+            {/* Upload Status */}
+            {loading ? (
+              <div className="text-center py-4">
+                <p className="text-gray-500">Loading contact image...</p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="inline-block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                  <p className="text-blue-700 text-sm">
+                    {contactImage
+                      ? "✅ Custom contact image loaded"
+                      : "ℹ️ Using default image - Upload custom contact image from admin panel"}
+                  </p>
                 </div>
               </div>
+            )}
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Map Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl font-bold text-[#1f4d40] mb-4">Find Us</h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Visit our facility in Taliparamba. We're located near the historic
+              Trichambaram Temple, easily accessible from major routes in Kannur
+              district.
+            </p>
+          </motion.div>
+
+          {/* Map Container */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="bg-gray-100 rounded-2xl shadow-xl overflow-hidden h-[400px]"
+          >
+            {/* Google Maps Embed */}
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3890.223456789012!2d75.3456789!3d12.3456789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDIwJzQ0LjQiTiA3NcKwMjAnNDQuNyJF!5e0!3m2!1sen!2sin!4v1234567890"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Sree Krishna Charitable Trust Location"
+              className="filter grayscale-[25%] hover:grayscale-0 transition-all duration-500"
+            ></iframe>
+          </motion.div>
+
+          {/* Transportation Info */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="grid md:grid-cols-3 gap-8 mt-12"
+          >
+            <div className="text-center p-6 bg-green-50 rounded-xl">
+              <h3 className="font-semibold text-green-800 mb-2">By Road</h3>
+              <p className="text-green-700 text-sm">
+                3km from Taliparamba town, easily accessible via NH66
+              </p>
+            </div>
+            <div className="text-center p-6 bg-blue-50 rounded-xl">
+              <h3 className="font-semibold text-blue-800 mb-2">
+                Public Transport
+              </h3>
+              <p className="text-blue-700 text-sm">
+                Buses available from Kannur and nearby towns to Taliparamba
+              </p>
+            </div>
+            <div className="text-center p-6 bg-purple-50 rounded-xl">
+              <h3 className="font-semibold text-purple-800 mb-2">Landmark</h3>
+              <p className="text-purple-700 text-sm">
+                Near Trichambaram Temple, opposite to the main entrance
+              </p>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Footer - Consistent Branding */}
-      <footer className="bg-[#1f4d40] text-white text-center py-8 mt-10">
-        <p className="text-xl font-medium mb-2">
-          SREE KRISHNA CHARITABLE TRUST
-        </p>
-        <p className="text-sm opacity-80">
-          A Permanent Home for Dignity and Care
-        </p>
-      </footer>
+      {/* Call to Action */}
+      <section className="py-16 bg-gradient-to-r from-[#1f4d40] to-[#2a6655] text-white">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-4xl mx-auto text-center px-6"
+        >
+          <h2 className="text-4xl font-bold mb-4">
+            Ready to Make a Difference?
+          </h2>
+          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+            Your call or visit could be the beginning of a beautiful journey in
+            serving our elderly community.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <motion.a
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              href="tel:+911234567890"
+              className="bg-white text-[#1f4d40] font-semibold px-8 py-4 rounded-lg hover:bg-green-50 transition-all duration-300 flex items-center justify-center gap-3"
+            >
+              <Phone className="w-5 h-5" />
+              Call Us Now
+            </motion.a>
+            <motion.a
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              href="#visit"
+              className="border-2 border-white text-white font-semibold px-8 py-4 rounded-lg hover:bg-white hover:text-[#1f4d40] transition-all duration-300"
+            >
+              Schedule a Visit
+            </motion.a>
+          </div>
+        </motion.div>
+      </section>
     </div>
   );
 }
