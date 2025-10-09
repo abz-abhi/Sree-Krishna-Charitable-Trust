@@ -6,8 +6,10 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [homeImage, setHomeImage] = useState<File | null>(null);
   const [missionImage, setMissionImage] = useState<File | null>(null);
+  const [joinHandsImage, setJoinHandsImage] = useState<File | null>(null);
   const [homePreview, setHomePreview] = useState<string | null>(null);
   const [missionPreview, setMissionPreview] = useState<string | null>(null);
+  const [joinHandsPreview, setJoinHandsPreview] = useState<string | null>(null);
   const [uploadedImages, setUploadedImages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -45,11 +47,17 @@ export default function AdminPage() {
         await uploadImage(missionImage, "mission");
       }
 
+      if (joinHandsImage) {
+        await uploadImage(joinHandsImage, "joinhands");
+      }
+
       setMessage("✅ Images uploaded successfully!");
       setHomeImage(null);
       setMissionImage(null);
+      setJoinHandsImage(null);
       setHomePreview(null);
       setMissionPreview(null);
+      setJoinHandsPreview(null);
 
       // Refresh the images list
       const res = await fetch("/api/images");
@@ -77,14 +85,25 @@ export default function AdminPage() {
   };
 
   // Clear file input and preview
-  const clearFileInput = (type: "home" | "mission") => {
+  const clearFileInput = (type: "home" | "mission" | "joinhands") => {
     if (type === "home") {
       setHomeImage(null);
       setHomePreview(null);
-    } else {
+    } else if (type === "mission") {
       setMissionImage(null);
       setMissionPreview(null);
+    } else {
+      setJoinHandsImage(null);
+      setJoinHandsPreview(null);
     }
+  };
+
+  // Function to get image source (handles base64)
+  const getImageSrc = (image: any) => {
+    if (image?.imageData) {
+      return `data:${image.mimetype};base64,${image.imageData}`;
+    }
+    return image?.filepath || "/images/placeholder.jpg";
   };
 
   return (
@@ -109,10 +128,11 @@ export default function AdminPage() {
                 </p>
                 <div className="relative w-full h-48 rounded-md overflow-hidden border">
                   <Image
-                    src={findImage("main").filepath}
+                    src={getImageSrc(findImage("main"))}
                     alt="Home"
                     fill
                     className="object-cover"
+                    unoptimized={!!findImage("main")?.imageData}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -187,10 +207,11 @@ export default function AdminPage() {
                 </p>
                 <div className="relative w-full h-48 rounded-md overflow-hidden border">
                   <Image
-                    src={findImage("mission").filepath}
+                    src={getImageSrc(findImage("mission"))}
                     alt="Mission"
                     fill
                     className="object-cover"
+                    unoptimized={!!findImage("mission")?.imageData}
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -235,7 +256,6 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-xs text-gray-600">
-                    {/* ✅ FIX: missionImage is guaranteed to exist here because of the && check above */}
                     File: {missionImage.name} (
                     {(missionImage.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
@@ -251,9 +271,87 @@ export default function AdminPage() {
             )}
           </div>
 
+          {/* JOIN HANDS SECTION IMAGE */}
+          <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+            <h2 className="text-xl font-semibold text-emerald-700 mb-4">
+              🤝 Join Hands Section Image
+            </h2>
+
+            {/* Current Join Hands Image */}
+            {findImage("joinhands") && (
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  Current Join Hands Image:
+                </p>
+                <div className="relative w-full h-48 rounded-md overflow-hidden border">
+                  <Image
+                    src={getImageSrc(findImage("joinhands"))}
+                    alt="Join Hands"
+                    fill
+                    className="object-cover"
+                    unoptimized={!!findImage("joinhands")?.imageData}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Uploaded:{" "}
+                  {new Date(
+                    findImage("joinhands").uploadedAt
+                  ).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+
+            {/* File Input */}
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload New Join Hands Image:
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setJoinHandsImage(file);
+                  if (file) setJoinHandsPreview(URL.createObjectURL(file));
+                }}
+                className="block w-full border border-gray-300 p-2 rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              />
+            </div>
+
+            {/* Preview and Clear */}
+            {joinHandsPreview && joinHandsImage && (
+              <div className="mt-4 p-3 border border-blue-200 rounded bg-blue-50">
+                <p className="text-sm font-medium text-blue-700 mb-2">
+                  New Image Preview:
+                </p>
+                <div className="relative w-full h-40 rounded-md overflow-hidden">
+                  <Image
+                    src={joinHandsPreview}
+                    alt="Join Hands Preview"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-xs text-gray-600">
+                    File: {joinHandsImage.name} (
+                    {(joinHandsImage.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => clearFileInput("joinhands")}
+                    className="text-xs text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             type="submit"
-            disabled={!homeImage && !missionImage}
+            disabled={!homeImage && !missionImage && !joinHandsImage}
             className="w-full py-3 bg-[#1f4d40] text-white font-semibold rounded-md hover:bg-[#16382f] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             📤 Save Images
@@ -277,7 +375,7 @@ export default function AdminPage() {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             📊 Upload Summary
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div className="text-center p-3 bg-blue-50 rounded">
               <div className="text-2xl font-bold text-blue-700">
                 {uploadedImages.filter((img) => img.section === "main").length}
@@ -296,11 +394,20 @@ export default function AdminPage() {
             <div className="text-center p-3 bg-purple-50 rounded">
               <div className="text-2xl font-bold text-purple-700">
                 {
+                  uploadedImages.filter((img) => img.section === "joinhands")
+                    .length
+                }
+              </div>
+              <div className="text-purple-600">Join Hands Images</div>
+            </div>
+            <div className="text-center p-3 bg-orange-50 rounded">
+              <div className="text-2xl font-bold text-orange-700">
+                {
                   uploadedImages.filter((img) => img.section === "gallery")
                     .length
                 }
               </div>
-              <div className="text-purple-600">Gallery Images</div>
+              <div className="text-orange-600">Gallery Images</div>
             </div>
           </div>
         </div>
