@@ -69,9 +69,9 @@ export default function AdminPage() {
       }
 
       await Promise.all(uploadPromises);
-      
+
       setMessage("✅ All images uploaded successfully!");
-      
+
       // Clear all form data
       setHomeImage(null);
       setMissionImage(null);
@@ -87,7 +87,6 @@ export default function AdminPage() {
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-
     } catch (err: any) {
       console.error("Upload error:", err);
       setMessage(`❌ Upload failed: ${err.message}`);
@@ -100,7 +99,7 @@ export default function AdminPage() {
   const findImage = (section: string) => {
     const images = uploadedImages.filter((img) => img.section === section);
     if (images.length === 0) return null;
-    
+
     // Get the latest image for the section
     return images.reduce((latest, current) => {
       return new Date(current.uploadedAt) > new Date(latest.uploadedAt)
@@ -129,6 +128,12 @@ export default function AdminPage() {
       return `data:${image.mimetype};base64,${image.imageData}`;
     }
     return image?.filepath || "/images/placeholder.jpg";
+  };
+
+  // Safe file size display
+  const getFileSize = (file: File | null) => {
+    if (!file || !file.size) return "0.00";
+    return (file.size / 1024 / 1024).toFixed(2);
   };
 
   return (
@@ -161,7 +166,8 @@ export default function AdminPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Uploaded: {new Date(findImage("main").uploadedAt).toLocaleDateString()}
+                  Uploaded:{" "}
+                  {new Date(findImage("main").uploadedAt).toLocaleDateString()}
                   <br />
                   Size: {(findImage("main").size / 1024 / 1024).toFixed(2)} MB
                 </p>
@@ -186,7 +192,7 @@ export default function AdminPage() {
             </div>
 
             {/* Preview and Clear */}
-            {homePreview && (
+            {homePreview && homeImage && (
               <div className="mt-4 p-3 border border-blue-200 rounded bg-blue-50">
                 <p className="text-sm font-medium text-blue-700 mb-2">
                   New Home Image Preview:
@@ -201,7 +207,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-xs text-gray-600">
-                    File: {homeImage?.name} ({(homeImage?.size / 1024 / 1024).toFixed(2)} MB)
+                    File: {homeImage.name} ({getFileSize(homeImage)} MB)
                   </p>
                   <button
                     type="button"
@@ -237,9 +243,15 @@ export default function AdminPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Uploaded: {new Date(findImage("mission").uploadedAt).toLocaleDateString()}
+                  Uploaded:{" "}
+                  {new Date(
+                    findImage("mission").uploadedAt
+                  ).toLocaleDateString()}
                   <br />
-                  Size: {(findImage("mission").size / 1024 / 1024).toFixed(2)} MB
+                  Size: {(findImage("mission").size / 1024 / 1024).toFixed(
+                    2
+                  )}{" "}
+                  MB
                 </p>
               </div>
             )}
@@ -277,7 +289,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-xs text-gray-600">
-                    File: {missionImage.name} ({(missionImage.size / 1024 / 1024).toFixed(2)} MB)
+                    File: {missionImage.name} ({getFileSize(missionImage)} MB)
                   </p>
                   <button
                     type="button"
@@ -313,9 +325,15 @@ export default function AdminPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Uploaded: {new Date(findImage("joinhands").uploadedAt).toLocaleDateString()}
+                  Uploaded:{" "}
+                  {new Date(
+                    findImage("joinhands").uploadedAt
+                  ).toLocaleDateString()}
                   <br />
-                  Size: {(findImage("joinhands").size / 1024 / 1024).toFixed(2)} MB
+                  Size: {(findImage("joinhands").size / 1024 / 1024).toFixed(
+                    2
+                  )}{" "}
+                  MB
                 </p>
               </div>
             )}
@@ -353,7 +371,8 @@ export default function AdminPage() {
                 </div>
                 <div className="flex justify-between items-center mt-2">
                   <p className="text-xs text-gray-600">
-                    File: {joinHandsImage.name} ({(joinHandsImage.size / 1024 / 1024).toFixed(2)} MB)
+                    File: {joinHandsImage.name} ({getFileSize(joinHandsImage)}{" "}
+                    MB)
                   </p>
                   <button
                     type="button"
@@ -370,7 +389,9 @@ export default function AdminPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={(!homeImage && !missionImage && !joinHandsImage) || uploading}
+            disabled={
+              (!homeImage && !missionImage && !joinHandsImage) || uploading
+            }
             className="w-full py-3 bg-[#1f4d40] text-white font-semibold rounded-md hover:bg-[#16382f] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {uploading ? (
@@ -379,7 +400,7 @@ export default function AdminPage() {
                 Uploading...
               </>
             ) : (
-              '📤 Save All Images'
+              "📤 Save All Images"
             )}
           </button>
         </form>
@@ -411,24 +432,35 @@ export default function AdminPage() {
             </div>
             <div className="text-center p-3 bg-green-50 rounded border border-green-200">
               <div className="text-2xl font-bold text-green-700">
-                {uploadedImages.filter((img) => img.section === "mission").length}
+                {
+                  uploadedImages.filter((img) => img.section === "mission")
+                    .length
+                }
               </div>
               <div className="text-green-600 font-medium">Mission Images</div>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded border border-purple-200">
               <div className="text-2xl font-bold text-purple-700">
-                {uploadedImages.filter((img) => img.section === "joinhands").length}
+                {
+                  uploadedImages.filter((img) => img.section === "joinhands")
+                    .length
+                }
               </div>
-              <div className="text-purple-600 font-medium">Join Hands Images</div>
+              <div className="text-purple-600 font-medium">
+                Join Hands Images
+              </div>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded border border-orange-200">
               <div className="text-2xl font-bold text-orange-700">
-                {uploadedImages.filter((img) => img.section === "gallery").length}
+                {
+                  uploadedImages.filter((img) => img.section === "gallery")
+                    .length
+                }
               </div>
               <div className="text-orange-600 font-medium">Gallery Images</div>
             </div>
           </div>
-          
+
           <div className="mt-4 text-center">
             <button
               onClick={fetchImages}
