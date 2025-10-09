@@ -5,33 +5,20 @@ import Image from "next/image";
 const MissionSection = () => {
   const [missionImage, setMissionImage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchMissionImage = async () => {
       try {
-        setLoading(true);
-        setError(null);
-
-        console.log("🔄 Fetching images from API...");
         const response = await fetch("/api/images");
-
-        if (!response.ok) {
-          throw new Error(
-            `API returned ${response.status}: ${response.statusText}`
-          );
-        }
-
         const images = await response.json();
-        console.log("✅ API response:", images);
 
-        // Filter images with 'mission' section
-        const missionImages = images.filter((img) => img.section === "mission");
-        console.log("🎯 Mission images found:", missionImages);
+        // Look for the new section name "home-mission"
+        const missionImages = images.filter(
+          (img) => img.section === "home-mission"
+        );
 
         if (missionImages.length > 0) {
-          // Get the latest mission image
-          const latestMission = missionImages.reduce((latest, current) => {
+          const latestImage = missionImages.reduce((latest, current) => {
             const latestDate = new Date(latest.updatedAt || latest.uploadedAt);
             const currentDate = new Date(
               current.updatedAt || current.uploadedAt
@@ -39,15 +26,12 @@ const MissionSection = () => {
             return currentDate > latestDate ? current : latest;
           });
 
-          console.log("📸 Latest mission image:", latestMission);
-          setMissionImage(latestMission);
+          setMissionImage(latestImage);
         } else {
-          console.log("❌ No mission images found");
           setMissionImage(null);
         }
       } catch (err) {
-        console.error("❌ Error fetching mission image:", err);
-        setError(err.message);
+        console.error("Error fetching mission image:", err);
         setMissionImage(null);
       } finally {
         setLoading(false);
@@ -57,81 +41,40 @@ const MissionSection = () => {
     fetchMissionImage();
   }, []);
 
-  // Function to get the correct image source
-  const getImageSource = () => {
-    if (!missionImage) return null;
-
-    // Priority 1: Use base64 image data if available
-    if (missionImage.imageData) {
-      return `data:${missionImage.mimetype};base64,${missionImage.imageData}`;
+  // Function to get image source - handles both base64 and filepath
+  const getImageSrc = (image) => {
+    if (image?.imageData) {
+      return `data:${image.mimetype};base64,${image.imageData}`;
     }
-
-    // Priority 2: Use filepath if available
-    if (missionImage.filepath) {
-      return missionImage.filepath;
-    }
-
-    // Priority 3: Use imageUrl if available (backward compatibility)
-    if (missionImage.imageUrl) {
-      return missionImage.imageUrl;
-    }
-
-    return null;
+    return image?.filepath;
   };
-
-  const imageSrc = getImageSource();
 
   return (
     <section className="py-16 sm:py-20">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-28 lg:gap-20 px-4 sm:px-8 lg:px-12">
         {/* Left Column - Image */}
         <div className="relative w-full h-[280px] sm:h-[360px] md:h-[420px] lg:h-[700px] rounded-2xl overflow-hidden shadow-xl order-1 lg:order-none">
-          {loading ? (
-            // Loading state
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 rounded-lg">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1f4d40] mb-3"></div>
-              <p className="text-gray-600 text-sm">Loading mission image...</p>
-            </div>
-          ) : error ? (
-            // Error state
-            <div className="flex flex-col items-center justify-center w-full h-full bg-red-50 rounded-lg p-4">
-              <div className="text-red-500 text-lg mb-2">⚠️</div>
-              <p className="text-red-600 text-sm text-center font-medium">
-                Failed to load image
-              </p>
-              <p className="text-red-500 text-xs text-center mt-1">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-3 px-4 py-2 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200 transition"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : missionImage && imageSrc ? (
-            // Success state - Image loaded
+          {missionImage && getImageSrc(missionImage) ? (
             <Image
-              src={imageSrc}
-              alt={missionImage.originalName || "Mission Section Image"}
+              src={getImageSrc(missionImage)}
+              alt={missionImage.originalName || "Mission Image"}
               fill
               className="object-cover grayscale-[30%] hover:grayscale-0 transition duration-700 ease-in-out"
-              unoptimized={!!missionImage.imageData} // Required for base64 images
-              priority={true} // Important for above-the-fold images
+              unoptimized={!!missionImage.imageData}
+              priority={true}
             />
           ) : (
-            // No image state
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-6">
-              <div className="text-4xl text-gray-400 mb-3">📷</div>
-              <p className="text-gray-600 text-sm font-medium text-center mb-1">
-                No Mission Image
-              </p>
-              <p className="text-gray-500 text-xs text-center">
-                Upload an image with section set to "mission"
+            <div className="flex items-center justify-center w-full h-full bg-gray-100 rounded-lg">
+              <p className="text-gray-500 text-sm sm:text-base">
+                {missionImage
+                  ? "No mission image available"
+                  : "Loading mission image..."}
               </p>
             </div>
           )}
         </div>
 
-        {/* Right Column - Text Content (unchanged) */}
+        {/* Right Column - Text */}
         <div className="space-y-8 text-center lg:text-left">
           <h2 className="text-4xl sm:text-5xl font-bold text-[#1f4d40] leading-tight tracking-tight">
             Our Mission

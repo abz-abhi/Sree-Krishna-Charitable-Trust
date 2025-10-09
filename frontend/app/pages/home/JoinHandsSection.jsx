@@ -5,48 +5,37 @@ import Image from "next/image";
 const JoinHandsSection = () => {
   const [joinHandsImage, setJoinHandsImage] = useState(null);
 
-  const fetchJoinHandsImage = async () => {
-    try {
-      console.log("🔄 Fetching joinhands images...");
-      const response = await fetch("/api/images?t=" + Date.now()); // Prevent caching
-      const images = await response.json();
-
-      const joinHandsImages = images.filter(
-        (img) => img.section === "joinhands"
-      );
-      console.log("📸 Joinhands images found:", joinHandsImages.length);
-
-      if (joinHandsImages.length > 0) {
-        const latestImage = joinHandsImages.reduce((latest, current) => {
-          const latestDate = new Date(latest.updatedAt || latest.uploadedAt);
-          const currentDate = new Date(current.updatedAt || current.uploadedAt);
-          return currentDate > latestDate ? current : latest;
-        });
-
-        setJoinHandsImage(latestImage);
-        console.log("✅ Join Hands image loaded:", latestImage.filename);
-      } else {
-        setJoinHandsImage(null);
-        console.log("❌ No joinhands images found");
-      }
-    } catch (err) {
-      console.error("Error fetching join hands image:", err);
-    }
-  };
-
   useEffect(() => {
-    fetchJoinHandsImage();
+    const fetchJoinHandsImage = async () => {
+      try {
+        const response = await fetch("/api/images");
+        const images = await response.json();
 
-    // Refresh every 3 seconds for 30 seconds after component loads
-    const interval = setInterval(fetchJoinHandsImage, 3000);
-    const timeout = setTimeout(() => clearInterval(interval), 30000);
+        // Look for the new section name "home-joinhands"
+        const joinHandsImages = images.filter(
+          (img) => img.section === "home-joinhands"
+        );
 
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
+        if (joinHandsImages.length > 0) {
+          const latestImage = joinHandsImages.reduce((latest, current) => {
+            const latestDate = new Date(latest.updatedAt || latest.uploadedAt);
+            const currentDate = new Date(
+              current.updatedAt || current.uploadedAt
+            );
+            return currentDate > latestDate ? current : latest;
+          });
+
+          setJoinHandsImage(latestImage);
+        }
+      } catch (err) {
+        console.error("Error fetching join hands image:", err);
+      }
     };
+
+    fetchJoinHandsImage();
   }, []);
 
+  // Function to get image source (handles base64)
   const getImageSrc = (image) => {
     if (image?.imageData) {
       return `data:${image.mimetype};base64,${image.imageData}`;
@@ -87,6 +76,7 @@ const JoinHandsSection = () => {
             </h2>
           </div>
 
+          {/* Info Box */}
           <div className="bg-[#f1e8dd] p-6 sm:p-8 rounded-xl shadow-[1px_8px_12px_0px_#66A0A0AF] flex flex-col sm:flex-row justify-between items-center gap-6">
             <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
               Looking to contribute, volunteer, or seek support from Sree

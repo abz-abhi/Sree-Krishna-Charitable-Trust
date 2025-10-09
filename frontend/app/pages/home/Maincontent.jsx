@@ -5,43 +5,24 @@ import Image from "next/image";
 const HomePage = () => {
   const [homeImage, setHomeImage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchHomeImage = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        const res = await fetch("/api/images");
+        const data = await res.json();
 
-        const response = await fetch("/api/images");
+        // Look for the new section name "home-main"
+        const homeImg = data.filter((item) => item.section === "home-main");
+        const latestMain = homeImg.reduce((latest, item) => {
+          return new Date(item.updatedAt) > new Date(latest.updatedAt)
+            ? item
+            : latest;
+        }, homeImg[0]);
 
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-
-        const images = await response.json();
-
-        // Filter images with 'main' section
-        const mainImages = images.filter((img) => img.section === "main");
-
-        if (mainImages.length > 0) {
-          // Get the latest main image
-          const latestMain = mainImages.reduce((latest, current) => {
-            const latestDate = new Date(latest.updatedAt || latest.uploadedAt);
-            const currentDate = new Date(
-              current.updatedAt || current.uploadedAt
-            );
-            return currentDate > latestDate ? current : latest;
-          });
-
-          setHomeImage(latestMain);
-        } else {
-          setHomeImage(null);
-        }
+        setHomeImage(latestMain || null);
       } catch (err) {
         console.error("Error fetching home image:", err);
-        setError(err.message);
-        setHomeImage(null);
       } finally {
         setLoading(false);
       }
@@ -50,31 +31,18 @@ const HomePage = () => {
     fetchHomeImage();
   }, []);
 
-  // Function to get the correct image source
-  const getImageSource = () => {
-    if (!homeImage) return null;
-
-    if (homeImage.imageData) {
-      return `data:${homeImage.mimetype};base64,${homeImage.imageData}`;
+  // Function to get image source - handles both base64 and filepath
+  const getImageSrc = (image) => {
+    if (image?.imageData) {
+      return `data:${image.mimetype};base64,${image.imageData}`;
     }
-
-    if (homeImage.filepath) {
-      return homeImage.filepath;
-    }
-
-    if (homeImage.imageUrl) {
-      return homeImage.imageUrl;
-    }
-
-    return null;
+    return image?.filepath;
   };
-
-  const imageSrc = getImageSource();
 
   return (
     <section className="py-16 sm:py-20 mt-10">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 items-center gap-14 lg:gap-28 px-4 sm:px-6 lg:px-12">
-        {/* Left Column - Text */}
+        {/* Left Column */}
         <div className="space-y-8 text-center lg:text-left">
           <h1 className="text-5xl font-bold text-[#1f4d40] leading-tight">
             Sree Krishna <br className="hidden sm:block" /> Charitable Trust
@@ -100,24 +68,11 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Right Column - Image */}
+        {/* Right Column */}
         <div className="relative w-full h-[280px] sm:h-[360px] md:h-[420px] lg:h-[500px] rounded-lg overflow-hidden shadow-lg">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1f4d40] mb-3"></div>
-              <p className="text-gray-600 text-sm">Loading image...</p>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center w-full h-full bg-red-50 p-4">
-              <div className="text-red-500 text-lg mb-2">⚠️</div>
-              <p className="text-red-600 text-sm text-center">
-                Failed to load image
-              </p>
-              <p className="text-red-500 text-xs text-center mt-1">{error}</p>
-            </div>
-          ) : homeImage && imageSrc ? (
+          {homeImage && getImageSrc(homeImage) ? (
             <Image
-              src={imageSrc}
+              src={getImageSrc(homeImage)}
               alt={homeImage.originalName || "Home Page Image"}
               fill
               className="object-cover grayscale-[30%] hover:grayscale-0 transition duration-500"
@@ -125,13 +80,9 @@ const HomePage = () => {
               priority={true}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 p-6">
-              <div className="text-4xl text-gray-400 mb-3">🏠</div>
-              <p className="text-gray-600 text-sm font-medium text-center mb-1">
-                No Home Image
-              </p>
-              <p className="text-gray-500 text-xs text-center">
-                Upload an image with section set to "main"
+            <div className="flex items-center justify-center w-full h-full bg-gray-100">
+              <p className="text-gray-500 text-sm sm:text-base">
+                {homeImage ? "No image available" : "Loading image..."}
               </p>
             </div>
           )}
